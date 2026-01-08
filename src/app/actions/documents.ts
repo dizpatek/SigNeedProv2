@@ -41,19 +41,25 @@ export async function uploadDocument(formData: FormData) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // Still try to write to local for dev convenience, but don't fail if it doesn't work (Vercel)
     try {
         await mkdir(UPLOAD_DIR, { recursive: true });
-    } catch (e) { }
+        const sanitizedName = sanitizeFilename(file.name);
+        const fileName = `${Date.now()}-${sanitizedName}`;
+        const path = join(UPLOAD_DIR, fileName);
+        await writeFile(path, buffer);
+    } catch (e) {
+        console.warn("Filesystem write failed, relying on DB storage only:", e);
+    }
 
     const sanitizedName = sanitizeFilename(file.name);
     const fileName = `${Date.now()}-${sanitizedName}`;
-    const path = join(UPLOAD_DIR, fileName);
-    await writeFile(path, buffer);
 
     const doc = await prisma.document.create({
         data: {
             name: file.name,
             originalUrl: `/uploads/${fileName}`,
+            originalContent: buffer,
             status: "PENDING",
         },
     });
@@ -79,13 +85,20 @@ export async function signDocument(id: string, signatures: SignatureData[]) {
     const document = await prisma.document.findUnique({ where: { id } });
     if (!document) throw new Error("Belge bulunamadı");
 
-    const fileName = document.originalUrl.split('/').pop();
-    if (!fileName) throw new Error("Dosya yolu geçersiz");
+    let pdfBytes: Buffer;
 
-    const pdfPath = join(UPLOAD_DIR, fileName);
-    const pdfBytes = await readFile(pdfPath);
+    try {
+        const fileName = document.originalUrl.split('/').pop();
+        if (!fileName) throw new Error("Dosya yolu geçersiz");
+        const pdfPath = join(UPLOAD_DIR, fileName);
+        pdfBytes = await readFile(pdfPath);
+    } catch (e) {
+        console.log("Filesystem read failed, falling back to DB content:", e);
+        if (!document.originalContent) throw new Error("PDF verisi bulunamadı");
+        pdfBytes = document.originalContent as Buffer;
+    }
+
     const pdfDoc = await PDFDocument.load(pdfBytes);
-
     const pages = pdfDoc.getPages();
 
     // Process all signatures
@@ -115,13 +128,20 @@ export async function signDocument(id: string, signatures: SignatureData[]) {
 
     const signedPdfBytes = await pdfDoc.save();
     const signedFileName = `signed-${id}-${Date.now()}.pdf`;
-    const signedPath = join(UPLOAD_DIR, signedFileName);
-    await writeFile(signedPath, Buffer.from(signedPdfBytes));
+
+    // Try to save to filesystem for dev
+    try {
+        const signedPath = join(UPLOAD_DIR, signedFileName);
+        await writeFile(signedPath, Buffer.from(signedPdfBytes));
+    } catch (e) {
+        console.warn("Filesystem write failed for signed doc:", e);
+    }
 
     const updatedDoc = await prisma.document.update({
         where: { id },
         data: {
             signedUrl: `/uploads/${signedFileName}`,
+            signedContent: Buffer.from(signedPdfBytes),
             status: "SIGNED",
         },
     });

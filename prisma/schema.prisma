@@ -12,6 +12,8 @@ model Document {
   name           String
   originalUrl    String
   signedUrl      String?
+  originalContent Bytes?
+  signedContent   Bytes?
   status         String   @default("PENDING")
   signatureZones String?
   createdAt      DateTime @default(now())
