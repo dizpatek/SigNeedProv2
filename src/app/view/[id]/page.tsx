@@ -2,8 +2,9 @@ import { getDocumentById } from "@/src/app/actions/documents";
 import ViewClient from "@/src/components/ViewClient";
 import { notFound } from "next/navigation";
 
-export default async function ViewPage({ params }: { params: { id: string } }) {
-    const document = await getDocumentById(params.id);
+export default async function ViewPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const document = await getDocumentById(id);
 
     if (!document) {
         notFound();
