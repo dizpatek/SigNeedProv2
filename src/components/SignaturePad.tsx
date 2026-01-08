@@ -1,8 +1,7 @@
-"use client";
-
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Eraser, Check, X } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface SignaturePadProps {
     onSave: (signatureDataUrl: string) => void;
@@ -11,6 +10,12 @@ interface SignaturePadProps {
 
 export default function SignaturePad({ onSave, onClose }: SignaturePadProps) {
     const sigCanvas = useRef<SignatureCanvas>(null);
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const clear = () => {
         sigCanvas.current?.clear();
@@ -21,11 +26,42 @@ export default function SignaturePad({ onSave, onClose }: SignaturePadProps) {
             alert("Lütfen önce imzanızı çizin.");
             return;
         }
-        const dataUrl = sigCanvas.current?.getTrimmedCanvas().toDataURL("image/png");
+
+        // Get the trimmed canvas
+        const canvas = sigCanvas.current?.getTrimmedCanvas();
+        if (!canvas) return;
+
+        // If we are in dark mode, we drew in white. 
+        // We should convert white pixels to dark blue for the final PDF.
+        if (resolvedTheme === "dark") {
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                // Target color: #0f172a (RGB: 15, 23, 42)
+                for (let i = 0; i < data.length; i += 4) {
+                    // If the pixel is not fully transparent
+                    if (data[i + 3] > 0) {
+                        // If it's white (drawn in dark mode)
+                        if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) {
+                            data[i] = 15;     // R
+                            data[i + 1] = 23; // G
+                            data[i + 2] = 42; // B
+                        }
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+        }
+
+        const dataUrl = canvas.toDataURL("image/png");
         if (dataUrl) {
             onSave(dataUrl);
         }
     };
+
+    const penColor = mounted && resolvedTheme === "dark" ? "#ffffff" : "#0f172a";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -44,7 +80,7 @@ export default function SignaturePad({ onSave, onClose }: SignaturePadProps) {
                     <div className="relative rounded-xl border-2 border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-950">
                         <SignatureCanvas
                             ref={sigCanvas}
-                            penColor="#0f172a"
+                            penColor={penColor}
                             canvasProps={{
                                 className: "signature-canvas w-full h-64 cursor-crosshair",
                             }}

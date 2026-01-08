@@ -9,7 +9,7 @@
     --primary-foreground: #ffffff;
 }
 
-[data-theme='dark'] {
+.dark {
     --background: #020617;
     --foreground: #f8fafc;
 }

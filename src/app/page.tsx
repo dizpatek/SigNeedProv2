@@ -1,8 +1,9 @@
-import { getDocuments } from "@/src/app/actions/documents";
+import { getDocuments, getDashboardStats } from "@/src/app/actions/documents";
 import DashboardClient from "@/src/components/DashboardClient";
 
 export default async function DashboardPage() {
     const documents = await getDocuments();
+    const stats = await getDashboardStats();
 
     // Serialize dates for client components
     const serializedDocuments = documents.map(doc => ({
@@ -11,5 +12,5 @@ export default async function DashboardPage() {
         updatedAt: doc.updatedAt.toISOString(),
     }));
 
-    return <DashboardClient initialDocuments={serializedDocuments} />;
+    return <DashboardClient initialDocuments={serializedDocuments} stats={stats} />;
 }

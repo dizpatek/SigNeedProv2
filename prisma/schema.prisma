@@ -17,4 +17,13 @@ model Document {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   isDeleted      Boolean  @default(false)
+  deletionRequested Boolean @default(false)
+}
+
+model AdminSettings {
+  id                  String   @id @default(cuid())
+  username            String   @unique @default("admin")
+  password            String // Hashed password
+  clientWelcomeMessage String  @default("Lütfen imzalamak veya görüntülemek istediğiniz belgeyi seçiniz.")
+  updatedAt           DateTime @updatedAt
 }

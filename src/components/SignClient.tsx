@@ -5,9 +5,9 @@ import { Viewer, Worker, RenderPageProps } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
-import { ChevronLeft, Share2, Download, MousePointer2, Type, Calendar, Check, Loader2, AlertCircle } from "lucide-react";
+import { ChevronLeft, Share2, Download, MousePointer2, Type, Calendar, Check, Loader2, AlertCircle, ExternalLink, Users } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SignaturePad from "./SignaturePad";
 import { signDocument } from "@/src/app/actions/documents";
 import { cn } from "@/src/lib/utils";
@@ -22,14 +22,19 @@ interface SignClientProps {
 
 export default function SignClient({ document }: SignClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const source = searchParams.get("source");
+    const backLink = source === "tablet" ? "/tablet" : "/";
     const defaultLayoutPluginInstance = defaultLayoutPlugin();
     const [showSigPad, setShowSigPad] = useState(false);
     const [isFinalizing, setIsFinalizing] = useState(false);
     const [boxes, setBoxes] = useState<any[]>([]);
     const [isMounted, setIsMounted] = React.useState(false);
     const [activeZone, setActiveZone] = useState<any | null>(null);
+    const [batchSignTarget, setBatchSignTarget] = useState<'left' | 'right' | null>(null);
     const [blobUrl, setBlobUrl] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [selectedShareUrl, setSelectedShareUrl] = useState<string | null>(null);
 
     React.useEffect(() => {
         setIsMounted(true);
@@ -154,6 +159,38 @@ export default function SignClient({ document }: SignClientProps) {
         scanPdf();
     }, [blobUrl]);
 
+    const handleBatchSignClick = (target: 'left' | 'right') => {
+        setBatchSignTarget(target);
+        setActiveZone(null);
+        setShowSigPad(true);
+    };
+
+    const handleZoneClick = (zoneId: number) => {
+        const zone = boxes.find(b => b.id === zoneId);
+        if (zone) {
+            setActiveZone(zone);
+            setBatchSignTarget(null);
+            setShowSigPad(true);
+        }
+    };
+
+    const onSaveSignature = (dataUrl: string) => {
+        if (activeZone) {
+            setBoxes(boxes.map(b => b.id === activeZone.id ? { ...b, data: dataUrl } : b));
+            setActiveZone(null);
+        } else if (batchSignTarget) {
+            setBoxes(boxes.map(b => {
+                const isTarget = batchSignTarget === 'left' ? b.x < 50 : b.x >= 50;
+                if (isTarget) {
+                    return { ...b, data: dataUrl };
+                }
+                return b;
+            }));
+            setBatchSignTarget(null);
+        }
+        setShowSigPad(false);
+    };
+
     const renderPage = (props: RenderPageProps) => {
         return (
             <>
@@ -207,6 +244,33 @@ export default function SignClient({ document }: SignClientProps) {
 
     if (!isMounted) return null;
 
+    const saveChanges = async (): Promise<boolean> => {
+        const signedBoxes = boxes.filter(b => b.data);
+        if (signedBoxes.length === 0) {
+            // Hiç imza yoksa da devam edebiliriz (belki sadece görüntülemek için paylaşıyordur)
+            // Ama orijinal koda sadık kalıp uyarı verelim veya hiç imza yoksa direkt orijinali paylaşalım.
+            // Kullanıcı mantığı: "İmzalama ekranında paylaş diyorsa, şu anki halini paylaşmak istiyordur."
+            // Eğer imza yoksa, orijinal hali geçerlidir.
+            return true;
+        }
+
+        try {
+            const signatures = signedBoxes.map(box => ({
+                dataUrl: box.data,
+                x: box.x,
+                y: box.y,
+                pageIndex: box.pageIndex
+            }));
+
+            await signDocument(document.id, signatures);
+            return true;
+        } catch (error) {
+            console.error(error);
+            alert("Kaydetme sırasında bir hata oluştu.");
+            return false;
+        }
+    };
+
     const handleFinalize = async () => {
         const signedBoxes = boxes.filter(b => b.data);
         if (signedBoxes.length === 0) {
@@ -215,45 +279,101 @@ export default function SignClient({ document }: SignClientProps) {
         }
 
         setIsFinalizing(true);
-        try {
-            for (const box of signedBoxes) {
-                await signDocument(document.id, box.data, box.x, box.y, box.pageIndex);
-            }
-            router.push("/");
+        const success = await saveChanges();
+
+        if (success) {
+            router.push(backLink);
             router.refresh();
-        } catch (error) {
-            console.error(error);
-            alert("İmzalama işlemi sırasında bir hata oluştu.");
-        } finally {
+        } else {
             setIsFinalizing(false);
         }
     };
 
-    const handleZoneClick = (zoneId: number) => {
-        const zone = boxes.find(b => b.id === zoneId);
-        if (zone) {
-            setActiveZone(zone);
-            setShowSigPad(true);
+    const handleShare = async () => {
+        setIsFinalizing(true); // Loading göstergesi için
+        const success = await saveChanges();
+        setIsFinalizing(false);
+
+        if (success) {
+            const url = `${window.location.origin}/view/${document.id}`;
+            setSelectedShareUrl(url);
+
+            // Try native share
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'SigNeed Belge Paylaşımı',
+                        text: `${document.name} belgesini incelemeniz için paylaşıyorum.`,
+                        url: url,
+                    });
+                    setSelectedShareUrl(null); // Native share başarılıysa modalı açma/kapat
+                } catch (err) {
+                    console.log("Native share failed, modal is open");
+                }
+            }
         }
     };
 
-    const onSaveSignature = (dataUrl: string) => {
-        if (activeZone) {
-            setBoxes(boxes.map(b => b.id === activeZone.id ? { ...b, data: dataUrl } : b));
-            setActiveZone(null);
-        } else {
-            setBoxes([...boxes, { id: Date.now(), pageIndex: 0, x: 100, y: 100, data: dataUrl }]);
-        }
-        setShowSigPad(false);
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        alert("Bağlantı kopyalandı!");
+        setSelectedShareUrl(null);
     };
 
     return (
-        <div className="flex h-[calc(100vh-10rem)] flex-col gap-6">
+        <div className="flex h-[calc(100vh-10rem)] flex-col gap-6 relative">
+            {/* Share Modal */}
+            {selectedShareUrl && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-800 animate-in fade-in zoom-in duration-200">
+                        <div className="border-b border-slate-100 px-6 py-4 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Paylaş</h3>
+                            <button onClick={() => setSelectedShareUrl(null)} className="text-slate-400 hover:text-slate-600">
+                                <span className="sr-only">Kapat</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div className="p-6 grid gap-3">
+                            <p className="text-sm text-slate-500 mb-2">
+                                <span className="font-medium text-slate-900 dark:text-white">{document.name}</span> belgesini paylaşmak için bir yöntem seçin:
+                            </p>
+
+                            <button
+                                onClick={() => {
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(`Belgeyi inceleyin: ${selectedShareUrl}`)}`, '_blank');
+                                    setSelectedShareUrl(null);
+                                }}
+                                className="flex items-center gap-3 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                            >
+                                <Share2 size={18} /> WhatsApp ile Gönder
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    window.location.href = `mailto:?subject=${encodeURIComponent(document.name)}&body=${encodeURIComponent(`Merhaba,\n\nBu belgeyi incelemeniz gerekiyor: ${selectedShareUrl}`)}`;
+                                    setSelectedShareUrl(null);
+                                }}
+                                className="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition-transform hover:scale-[1.02] dark:bg-slate-800 dark:text-slate-200"
+                            >
+                                <ExternalLink size={18} /> E-posta Gönder
+                            </button>
+
+                            <button
+                                onClick={() => copyToClipboard(selectedShareUrl)}
+                                className="flex items-center gap-3 rounded-xl border-2 border-slate-100 px-4 py-3 text-sm font-bold text-slate-600 transition-colors hover:border-sky-200 hover:bg-sky-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+                            >
+                                <MousePointer2 size={18} /> Bağlantıyı Kopyala
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link
-                            href="/"
+                            href={backLink}
                             className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
                         >
                             <ChevronLeft size={20} />
@@ -272,8 +392,12 @@ export default function SignClient({ document }: SignClientProps) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                            <Share2 size={16} />
+                        <button
+                            onClick={handleShare}
+                            disabled={isFinalizing}
+                            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 disabled:opacity-50"
+                        >
+                            {isFinalizing ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                             Paylaş
                         </button>
                         <button
@@ -332,17 +456,32 @@ export default function SignClient({ document }: SignClientProps) {
                     <div className="w-80 space-y-4">
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
                             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-400">
-                                Araçlar
+                                Toplu İmzalama
                             </h3>
                             <div className="grid gap-2">
                                 <button
-                                    onClick={() => setShowSigPad(true)}
+                                    onClick={() => handleBatchSignClick('left')}
                                     className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 font-medium text-slate-700 transition-all hover:border-sky-200 hover:bg-sky-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-900 dark:hover:bg-sky-950/30"
                                 >
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
-                                        <MousePointer2 size={18} className="text-sky-600" />
+                                        <Users size={18} className="text-sky-600" />
                                     </div>
-                                    <div className="text-left text-sm">Manuel İmza Ekle</div>
+                                    <div className="text-left">
+                                        <div className="text-sm font-semibold">1. Kişi (Sol)</div>
+                                        <div className="text-xs text-slate-400">Tüm sol alanları imzala</div>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => handleBatchSignClick('right')}
+                                    className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 font-medium text-slate-700 transition-all hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-900 dark:hover:bg-indigo-950/30"
+                                >
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
+                                        <Users size={18} className="text-indigo-600" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="text-sm font-semibold">2. Kişi (Sağ)</div>
+                                        <div className="text-xs text-slate-400">Tüm sağ alanları imzala</div>
+                                    </div>
                                 </button>
                             </div>
                         </div>
@@ -353,7 +492,7 @@ export default function SignClient({ document }: SignClientProps) {
                                 Otomatik Tespit
                             </div>
                             <p className="text-xs leading-relaxed text-emerald-800/70 dark:text-emerald-400/60">
-                                Bekleyen <b>{boxes.length}</b> imza alanı tespit edildi. Yeşil kutucuklara tıklayarak imzalayabilirsiniz.
+                                Bekleyen <b>{boxes.length}</b> imza alanı tespit edildi. Toplu imza ile veya kutucuklara tıklayarak imzalayabilirsiniz.
                             </p>
                         </div>
                     </div>
