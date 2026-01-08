@@ -1,0 +1,35 @@
+[
+  {
+    "id": "cmk4neirf0000snukpfe6gd6n",
+    "name": "uğur kımaz_Plan-Onayı-TL-Türkçe.fr3.pdf",
+    "originalUrl": "/api/files/1767828430202-uğur kımaz_Plan-Onayı-TL-Türkçe.fr3.pdf",
+    "signedUrl": null,
+    "status": "PENDING",
+    "signatureZones": null,
+    "createdAt": "2026-01-07T23:27:10.204Z",
+    "updatedAt": "2026-01-07T23:46:26.642Z",
+    "isDeleted": true
+  },
+  {
+    "id": "cmk4nibcl0000snawxz79d0vy",
+    "name": "uğur kımaz_Plan-Onayı-TL-Türkçe.fr3.pdf",
+    "originalUrl": "/api/files/1767828607219-uğur kımaz_Plan-Onayı-TL-Türkçe.fr3.pdf",
+    "signedUrl": "/uploads/signed-cmk4nibcl0000snawxz79d0vy-1767829455474.pdf",
+    "status": "SIGNED",
+    "signatureZones": null,
+    "createdAt": "2026-01-07T23:30:07.221Z",
+    "updatedAt": "2026-01-07T23:46:29.968Z",
+    "isDeleted": true
+  },
+  {
+    "id": "cmk4o3ft30000snzsvide1ij2",
+    "name": "uğur kımaz_Plan-Onayı-TL-Türkçe.fr3.pdf",
+    "originalUrl": "/api/files/1767829592772-ugur-kimazplan-onayi-tl-turkce.fr3.pdf",
+    "signedUrl": null,
+    "status": "PENDING",
+    "signatureZones": null,
+    "createdAt": "2026-01-07T23:46:32.775Z",
+    "updatedAt": "2026-01-07T23:46:32.775Z",
+    "isDeleted": false
+  }
+]
