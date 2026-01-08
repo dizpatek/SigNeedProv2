@@ -35,3 +35,16 @@ next-env.d.ts
 # database
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# environment variables
+.env
+.env.local
+
+# misc
+db-output.txt
+/tmp-app/
+uğur kımaz_Plan-Onayı-TL-Türkçe.fr3.pdf
