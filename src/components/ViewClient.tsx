@@ -45,19 +45,10 @@ export default function ViewClient({ document }: ViewClientProps) {
 
                 if (!fileName) throw new Error("Dosya adı bulunamadı");
 
-                const response = await fetch(`/api/pdf-base64/${fileName}`);
+                const response = await fetch(`/api/files/${fileName}`);
                 if (!response.ok) throw new Error(`Sunucu hatası: ${response.status}`);
 
-                const data = await response.json();
-                if (!data.base64) throw new Error("PDF verisi alınamadı");
-
-                const byteCharacters = atob(data.base64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                const blob = await response.blob();
 
                 currentUrl = URL.createObjectURL(blob);
                 setBlobUrl(currentUrl);
