@@ -1,6 +1,7 @@
 import { getDocumentById } from "@/src/app/actions/documents";
 import ViewClient from "@/src/components/ViewClient";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function ViewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -17,5 +18,9 @@ export default async function ViewPage({ params }: { params: Promise<{ id: strin
         updatedAt: document.updatedAt.toISOString(),
     };
 
-    return <ViewClient document={serializedDocument} />;
+    return (
+        <Suspense fallback={<div>Yükleniyor...</div>}>
+            <ViewClient document={serializedDocument} />
+        </Suspense>
+    );
 }
