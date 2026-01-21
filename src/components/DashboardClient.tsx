@@ -101,7 +101,22 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
         formData.append("file", file);
 
         startTransition(async () => {
-            await uploadDocument(formData);
+            try {
+                await uploadDocument(formData);
+                // Force immediate refresh to show new document
+                router.refresh();
+                setToast({
+                    isOpen: true,
+                    message: "Belge başarıyla yüklendi",
+                    type: "success"
+                });
+            } catch (err) {
+                setToast({
+                    isOpen: true,
+                    message: "Belge yüklenirken hata oluştu",
+                    type: "error"
+                });
+            }
         });
     };
 
@@ -406,6 +421,7 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
                                                                     startTransition(async () => {
                                                                         try {
                                                                             await rejectDeletion(doc.id);
+                                                                            router.refresh();
                                                                             setToast({
                                                                                 isOpen: true,
                                                                                 message: "Silme talebi reddedildi",
@@ -442,6 +458,7 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
                                                                 startTransition(async () => {
                                                                     try {
                                                                         await deleteDocument(doc.id);
+                                                                        router.refresh();
                                                                         setToast({
                                                                             isOpen: true,
                                                                             message: "Belge başarıyla silindi",
@@ -485,6 +502,7 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
                                                                 startTransition(async () => {
                                                                     try {
                                                                         await rejectDeletion(doc.id);
+                                                                        router.refresh();
                                                                         setToast({
                                                                             isOpen: true,
                                                                             message: "Silme talebi geri çekildi",
@@ -520,6 +538,7 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
                                                                 startTransition(async () => {
                                                                     try {
                                                                         await requestDeletion(doc.id);
+                                                                        router.refresh();
                                                                         setToast({
                                                                             isOpen: true,
                                                                             message: "Silme isteği yöneticiye iletildi",

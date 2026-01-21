@@ -46,9 +46,13 @@ export async function GET(
                 'Content-Length': fileBuffer.length.toString(),
                 'Accept-Ranges': 'bytes',
                 'X-Content-Type-Options': 'nosniff',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                // Stronger cache-busting headers
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
                 'Pragma': 'no-cache',
                 'Expires': '0',
+                'Surrogate-Control': 'no-store',
+                // Add ETag based on file size and timestamp for better cache invalidation
+                'ETag': `"${fileBuffer.length}-${Date.now()}"`,
             },
         });
     } catch (error) {

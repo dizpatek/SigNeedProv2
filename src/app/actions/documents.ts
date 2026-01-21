@@ -64,7 +64,9 @@ export async function uploadDocument(formData: FormData) {
         },
     });
 
+    // Revalidate all relevant paths
     revalidatePath("/");
+    revalidatePath("/tablet");
     return doc;
 }
 
@@ -146,7 +148,11 @@ export async function signDocument(id: string, signatures: SignatureData[]) {
         },
     });
 
+    // Revalidate all relevant paths for proper sync
     revalidatePath("/");
+    revalidatePath("/tablet");
+    revalidatePath(`/sign/${id}`);
+    revalidatePath(`/view/${id}`);
     return updatedDoc;
 }
 
