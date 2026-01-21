@@ -1,6 +1,10 @@
 import { getDocuments } from "@/src/app/actions/documents";
 import DashboardClient from "@/src/components/DashboardClient";
 
+// Force dynamic rendering to avoid build-time issues
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Tablet page acts as a client-facing interface
 export default async function TabletPage() {
     const documents = await getDocuments();

@@ -272,17 +272,9 @@ export default function SignClient({ document }: SignClientProps) {
         const success = await saveChanges();
 
         if (success) {
-            // Multiple refresh strategy for better sync
+            // Navigate back - revalidatePath on server will handle cache
+            router.push(backLink);
             router.refresh();
-
-            // Navigate back with cache busting
-            const timestamp = Date.now();
-            router.push(`${backLink}?refresh=${timestamp}`);
-
-            // Force another refresh after navigation
-            setTimeout(() => {
-                router.refresh();
-            }, 100);
         } else {
             setIsFinalizing(false);
         }

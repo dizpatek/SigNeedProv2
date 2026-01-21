@@ -3,6 +3,10 @@ import ViewClient from "@/src/components/ViewClient";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+// Force dynamic rendering to avoid build-time issues
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function ViewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const document = await getDocumentById(id);
