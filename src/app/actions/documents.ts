@@ -32,6 +32,18 @@ export async function getDocuments() {
         return await prisma.document.findMany({
             where: { isDeleted: false },
             orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                originalUrl: true,
+                signedUrl: true,
+                deletionRequested: true,
+                // originalContent ve signedContent BİLEREK SEÇİLMİYOR
+                // Bu alanlar çok büyük olduğu için listeleme sayfasını çökertiyor (Stack Overflow/OOM)
+            }
         });
     } catch (error) {
         console.error("Belgeler çekilirken hata oluştu:", error);
