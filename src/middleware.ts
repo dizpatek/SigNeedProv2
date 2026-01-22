@@ -4,51 +4,47 @@ import type { NextRequest } from "next/server";
 import { updateSession, decrypt } from "@/src/lib/auth";
 
 export async function middleware(request: NextRequest) {
-    // GEÇİCİ OLARAK TÜM KONTROLLERİ KAPATIYORUM - HATA TESPİTİ İÇİN
-    return NextResponse.next();
-    /*
-        const path = request.nextUrl.pathname;
-    
-        // Korumalı rotalar: Admin ana sayfa ve admin alt sayfaları
-        const isProtected = path === "/" || path.startsWith("/admin");
-        const isPublic = path === "/login" || path.startsWith("/tablet") || path.startsWith("/view") || path.startsWith("/sign") || path.startsWith("/api");
-    
-        // Eğer korumalı bir rotaya erişiliyorsa session kontrolü yap
-        if (isProtected) {
-            try {
-                const session = request.cookies.get("session")?.value;
-    
-                if (!session) {
-                    return NextResponse.redirect(new URL("/login", request.url));
-                }
-    
-                await decrypt(session);
-            } catch (err) {
-                console.error("Middleware Auth Hatası:", err);
+    const path = request.nextUrl.pathname;
+
+    // Korumalı rotalar: Admin ana sayfa ve admin alt sayfaları
+    const isProtected = path === "/" || path.startsWith("/admin");
+    const isPublic = path === "/login" || path.startsWith("/tablet") || path.startsWith("/view") || path.startsWith("/sign") || path.startsWith("/api");
+
+    // Eğer korumalı bir rotaya erişiliyorsa session kontrolü yap
+    if (isProtected) {
+        try {
+            const session = request.cookies.get("session")?.value;
+
+            if (!session) {
                 return NextResponse.redirect(new URL("/login", request.url));
             }
+
+            await decrypt(session);
+        } catch (err) {
+            console.error("Middleware Auth Hatası:", err);
+            return NextResponse.redirect(new URL("/login", request.url));
         }
-    
-        // Eğer zaten giriş yapmışsa ve /login'e gitmeye çalışıyorsa ana sayfaya at
-        if (path === "/login") {
-            try {
-                const session = request.cookies.get("session")?.value;
-                if (session) {
-                    await decrypt(session);
-                    return NextResponse.redirect(new URL("/", request.url));
-                }
-            } catch (e) {
-                // Session geçersizse login sayfasında kalabilir
-            }
-        }
-    
+    }
+
+    // Eğer zaten giriş yapmışsa ve /login'e gitmeye çalışıyorsa ana sayfaya at
+    if (path === "/login") {
         try {
-            return await updateSession(request);
-        } catch (error) {
-            console.error("Session Update Hatası:", error);
-            return NextResponse.next();
+            const session = request.cookies.get("session")?.value;
+            if (session) {
+                await decrypt(session);
+                return NextResponse.redirect(new URL("/", request.url));
+            }
+        } catch (e) {
+            // Session geçersizse login sayfasında kalabilir
         }
-    */
+    }
+
+    try {
+        return await updateSession(request);
+    } catch (error) {
+        console.error("Session Update Hatası:", error);
+        return NextResponse.next();
+    }
 }
 
 export const config = {
