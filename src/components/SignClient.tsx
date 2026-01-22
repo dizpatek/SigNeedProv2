@@ -406,48 +406,26 @@ export default function SignClient({ document }: SignClientProps) {
                     </div>
                 </div>
 
-                {/* Control Panels - Top on Mobile/Tablet, Right on Desktop */}
-                <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
-                        <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-400">
-                            Toplu İmzalama
-                        </h3>
-                        <div className="grid gap-2">
-                            <button
-                                onClick={() => handleBatchSignClick('left')}
-                                className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 font-medium text-slate-700 transition-all hover:border-sky-200 hover:bg-sky-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-900 dark:hover:bg-sky-950/30"
-                            >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
-                                    <Users size={18} className="text-sky-600" />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-sm font-semibold">1. Kişi (Sol)</div>
-                                    <div className="text-xs text-slate-400">Tüm sol alanları imzala</div>
-                                </div>
-                            </button>
-                            <button
-                                onClick={() => handleBatchSignClick('right')}
-                                className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 font-medium text-slate-700 transition-all hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-900 dark:hover:bg-indigo-950/30"
-                            >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
-                                    <Users size={18} className="text-indigo-600" />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-sm font-semibold">2. Kişi (Sağ)</div>
-                                    <div className="text-xs text-slate-400">Tüm sağ alanları imzala</div>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
+                {/* Control Panels - Top on Mobile/Tablet (Compact Mode) */}
+                <div className="lg:hidden flex items-center gap-2 overflow-x-auto pb-1">
+                    <button
+                        onClick={() => handleBatchSignClick('left')}
+                        className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    >
+                        <Users size={14} className="text-sky-600" />
+                        1. Kişi (Sol)
+                    </button>
+                    <button
+                        onClick={() => handleBatchSignClick('right')}
+                        className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    >
+                        <Users size={14} className="text-indigo-600" />
+                        2. Kişi (Sağ)
+                    </button>
 
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 dark:border-emerald-900/10 dark:bg-emerald-950/20">
-                        <div className="mb-3 flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-400">
-                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Otomatik Tespit
-                        </div>
-                        <p className="text-xs leading-relaxed text-emerald-800/70 dark:text-emerald-400/60">
-                            Bekleyen <b>{boxes.length}</b> imza alanı tespit edildi. Toplu imza ile veya kutucuklara tıklayarak imzalayabilirsiniz.
-                        </p>
+                    <div className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {boxes.length} İmza Alanı
                     </div>
                 </div>
 
