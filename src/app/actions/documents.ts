@@ -28,10 +28,15 @@ function sanitizeFilename(filename: string) {
 }
 
 export async function getDocuments() {
-    return await prisma.document.findMany({
-        where: { isDeleted: false },
-        orderBy: { createdAt: "desc" },
-    });
+    try {
+        return await prisma.document.findMany({
+            where: { isDeleted: false },
+            orderBy: { createdAt: "desc" },
+        });
+    } catch (error) {
+        console.error("Belgeler çekilirken hata oluştu:", error);
+        return [];
+    }
 }
 
 export async function uploadDocument(formData: FormData) {
@@ -179,12 +184,19 @@ export async function requestDeletion(id: string) {
 }
 
 export async function getDashboardStats() {
-    const totalDocs = await prisma.document.count({ where: { isDeleted: false } });
-    const signedDocs = await prisma.document.count({ where: { isDeleted: false, status: "SIGNED" } });
-    const pendingDocs = await prisma.document.count({ where: { isDeleted: false, status: "PENDING" } });
-    const deletionRequests = await prisma.document.count({ where: { isDeleted: false, deletionRequested: true } });
+    try {
+        const [totalDocs, signedDocs, pendingDocs, deletionRequests] = await Promise.all([
+            prisma.document.count({ where: { isDeleted: false } }),
+            prisma.document.count({ where: { isDeleted: false, status: "SIGNED" } }),
+            prisma.document.count({ where: { isDeleted: false, status: "PENDING" } }),
+            prisma.document.count({ where: { isDeleted: false, deletionRequested: true } })
+        ]);
 
-    return { totalDocs, signedDocs, pendingDocs, deletionRequests };
+        return { totalDocs, signedDocs, pendingDocs, deletionRequests };
+    } catch (error) {
+        console.error("İstatistikler çekilirken hata oluştu:", error);
+        return { totalDocs: 0, signedDocs: 0, pendingDocs: 0, deletionRequests: 0 };
+    }
 }
 
 export async function rejectDeletion(id: string) {

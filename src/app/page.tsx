@@ -9,11 +9,11 @@ export default async function DashboardPage() {
     const documents = await getDocuments();
     const stats = await getDashboardStats();
 
-    // Serialize dates for client components
-    const serializedDocuments = documents.map(doc => ({
+    // Hata durumunda documents boş dizi gelir
+    const serializedDocuments = (documents || []).map(doc => ({
         ...doc,
-        createdAt: doc.createdAt.toISOString(),
-        updatedAt: doc.updatedAt.toISOString(),
+        createdAt: typeof doc.createdAt === 'string' ? doc.createdAt : doc.createdAt.toISOString(),
+        updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : doc.updatedAt.toISOString(),
     }));
 
     return <DashboardClient initialDocuments={serializedDocuments} stats={stats} />;
