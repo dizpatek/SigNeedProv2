@@ -363,7 +363,8 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
 
             {/* Document List */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 shadow-sm">
-                <table className="w-full text-left text-sm">
+                {/* Desktop Table View */}
+                <table className="hidden md:table w-full text-left text-sm">
                     <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
                         <tr>
                             <th className="px-6 py-4">Belge Adı</th>
@@ -624,6 +625,152 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
                         )}
                     </tbody>
                 </table>
+
+                {/* Mobile/Tablet Card View */}
+                <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredDocs.map((doc) => (
+                        <div key={doc.id} className={cn("p-4 space-y-4", doc.deletionRequested && "bg-red-50 dark:bg-red-900/10")}>
+                            {/* Action Buttons - Top Section */}
+                            <div className="flex items-center gap-2 justify-end">
+                                {viewMode === "tablet" && (
+                                    doc.deletionRequested ? (
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setConfirmDialog({
+                                                    isOpen: true,
+                                                    title: "Talebi Geri Al",
+                                                    message: "Gönderdiğiniz silme talebini geri çekmek istediğinize emin misiniz?",
+                                                    variant: "info",
+                                                    onConfirm: () => {
+                                                        startTransition(async () => {
+                                                            try {
+                                                                await rejectDeletion(doc.id);
+                                                                router.refresh();
+                                                                setToast({
+                                                                    isOpen: true,
+                                                                    message: "Silme talebi geri çekildi",
+                                                                    type: "success"
+                                                                });
+                                                            } catch (err) {
+                                                                setToast({
+                                                                    isOpen: true,
+                                                                    message: "Talep geri çekilirken hata oluştu",
+                                                                    type: "error"
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }}
+                                            className="transition-all p-3 rounded-xl cursor-pointer relative z-20 bg-blue-50 text-blue-600 dark:bg-blue-950/20 opacity-100 shadow-sm hover:bg-blue-100"
+                                            title="Talebi Geri Al"
+                                        >
+                                            <RotateCw size={24} />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setConfirmDialog({
+                                                    isOpen: true,
+                                                    title: "Silme İsteği Gönder",
+                                                    message: "Bu belgeyi listeden kaldırmak için yönetici onayı isteği göndermek üzeresiniz. Onaylıyor musunuz?",
+                                                    variant: "warning",
+                                                    onConfirm: () => {
+                                                        startTransition(async () => {
+                                                            try {
+                                                                await requestDeletion(doc.id);
+                                                                router.refresh();
+                                                                setToast({
+                                                                    isOpen: true,
+                                                                    message: "Silme isteği yöneticiye iletildi",
+                                                                    type: "success"
+                                                                });
+                                                            } catch (err) {
+                                                                setToast({
+                                                                    isOpen: true,
+                                                                    message: "Silme isteği gönderilirken hata oluştu",
+                                                                    type: "error"
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }}
+                                            className="transition-all p-3 rounded-xl cursor-pointer relative z-20 bg-orange-50 text-orange-600 dark:bg-orange-950/20 opacity-100 shadow-sm hover:bg-orange-100"
+                                            title="Silme İsteği Gönder"
+                                        >
+                                            <AlertOctagon size={24} />
+                                        </button>
+                                    )
+                                )}
+
+                                {doc.status === "PENDING" ? (
+                                    <Link
+                                        href={`/sign/${doc.id}${viewMode === 'tablet' ? '?source=tablet' : ''}`}
+                                        className="flex items-center gap-2 rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-500/20 py-4 px-6 text-sm font-bold transition-all flex-1 justify-center"
+                                    >
+                                        <FileText size={20} />
+                                        <span>İmzala</span>
+                                    </Link>
+                                ) : (
+                                    <>
+                                        {viewMode === "tablet" && (
+                                            <button
+                                                onClick={() => handleShare(doc)}
+                                                className="p-3 text-sky-600 bg-sky-50 dark:bg-sky-950/30 rounded-xl transition-colors"
+                                                title="Paylaş"
+                                            >
+                                                <Share2 size={24} />
+                                            </button>
+                                        )}
+                                        <Link
+                                            href={`/view/${doc.id}${viewMode === 'tablet' ? '?source=tablet' : ''}`}
+                                            className="flex items-center gap-2 rounded-xl bg-slate-100 text-slate-700 py-4 px-6 text-sm dark:bg-slate-800 dark:text-slate-200 font-bold transition-all flex-1 justify-center"
+                                        >
+                                            <Eye size={20} />
+                                            <span>Görüntüle</span>
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Document Info - Bottom Section */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-900/20 dark:text-sky-400">
+                                    <FileText size={20} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-medium text-slate-900 dark:text-white">{doc.name}</div>
+                                    <div className="text-xs text-slate-500">ID: {doc.id.slice(-6)}</div>
+                                    {doc.deletionRequested && viewMode === 'admin' && (
+                                        <span className="mt-1 inline-block rounded bg-red-100 px-1 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">SİLME TALEP EDİLDİ</span>
+                                    )}
+                                </div>
+                                {doc.status === "PENDING" ? (
+                                    <div className="flex w-fit items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                                        <Clock size={14} />
+                                        Bekliyor
+                                    </div>
+                                ) : (
+                                    <div className="flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
+                                        <CheckCircle2 size={14} />
+                                        İmzalandı
+                                    </div>
+                                )}
+                            </div>
+                            <div className="text-xs text-slate-500">{formatDate(new Date(doc.createdAt))}</div>
+                        </div>
+                    ))}
+                    {filteredDocs.length === 0 && (
+                        <div className="px-6 py-12 text-center text-slate-500">
+                            Belge bulunamadı.
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Confirm Dialog */}
