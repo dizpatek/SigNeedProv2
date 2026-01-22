@@ -15,32 +15,39 @@ export async function middleware(request: NextRequest) {
 
     // Eğer korumalı bir rotaya erişiliyorsa session kontrolü yap
     if (isProtected) {
-        const session = request.cookies.get("session")?.value;
-
-        if (!session) {
-            return NextResponse.redirect(new URL("/login", request.url));
-        }
-
         try {
+            const session = request.cookies.get("session")?.value;
+
+            if (!session) {
+                return NextResponse.redirect(new URL("/login", request.url));
+            }
+
             await decrypt(session);
         } catch (err) {
-            // Session geçersizse login'e at
+            console.error("Middleware Auth Hatası:", err);
             return NextResponse.redirect(new URL("/login", request.url));
         }
     }
 
     // Eğer zaten giriş yapmışsa ve /login'e gitmeye çalışıyorsa ana sayfaya at
     if (path === "/login") {
-        const session = request.cookies.get("session")?.value;
-        if (session) {
-            try {
+        try {
+            const session = request.cookies.get("session")?.value;
+            if (session) {
                 await decrypt(session);
                 return NextResponse.redirect(new URL("/", request.url));
-            } catch (e) { }
+            }
+        } catch (e) {
+            // Session geçersizse login sayfasında kalabilir
         }
     }
 
-    return await updateSession(request);
+    try {
+        return await updateSession(request);
+    } catch (error) {
+        console.error("Session Update Hatası:", error);
+        return NextResponse.next();
+    }
 }
 
 export const config = {
