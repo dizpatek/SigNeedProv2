@@ -156,11 +156,11 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
             matchesFilter = !!doc.deletionRequested;
         }
 
-        // 15 Dakika Kuralı (Tablet Modu İçin)
+        // 30 Dakika Kuralı (Tablet Modu İçin)
         if (viewMode === "tablet" && doc.status === "SIGNED") {
             const updatedAt = new Date(doc.updatedAt);
-            const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000); // 15 dakika
-            if (updatedAt < fifteenMinutesAgo) return false;
+            const timeLimit = new Date(Date.now() - 30 * 60 * 1000); // 30 dakika
+            if (updatedAt < timeLimit) return false;
         }
 
         return matchesSearch && matchesFilter;
