@@ -219,10 +219,10 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
 
             {/* Header for Tablet Mode */}
             {viewMode === "tablet" && (
-                <div className="rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 p-8 text-white shadow-xl flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2">Belge İmzalama Paneli</h1>
-                        <p className="text-sky-100">{welcomeMessage}</p>
+                <div className="rounded-xl md:rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 p-2 md:p-8 text-white shadow-md md:shadow-xl flex items-center justify-between gap-2">
+                    <div className="flex flex-col md:block">
+                        <h1 className="text-sm font-bold md:text-3xl md:mb-2 leading-tight">Belge İmzalama Paneli</h1>
+                        <p className="hidden md:block text-sky-100">{welcomeMessage}</p>
                     </div>
                     <button
                         onClick={() => {
@@ -234,10 +234,10 @@ export default function DashboardClient({ initialDocuments, viewMode = "admin", 
                                 router.refresh();
                             }, 500);
                         }}
-                        className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 font-semibold text-white transition-all hover:bg-white/20 backdrop-blur-sm group"
+                        className="flex shrink-0 items-center gap-2 rounded-lg md:rounded-xl bg-white/10 px-3 py-1.5 md:px-4 md:py-3 text-xs md:text-base font-semibold text-white transition-all hover:bg-white/20 backdrop-blur-sm group"
                     >
-                        <RotateCw id="refresh-btn" size={20} className="transition-transform" />
-                        Yenile
+                        <RotateCw id="refresh-btn" size={16} className="transition-transform md:w-5 md:h-5" />
+                        <span className="md:inline">Yenile</span>
                     </button>
                 </div>
             )}
